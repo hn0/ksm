@@ -1,6 +1,6 @@
 /*
 *
-*   Randomly, with chance of .3 every 30 min, shutdown computer from kernel space. 
+*   Randomly, with chance of .3 every 30 min, shutdown computer from kernel space (up to 300 calls by setup seconds). 
 *     Excellent test for newcomers, install kernel module and see if they are able to pinpoint why their computer chases.
 *
 *    Created: 30. Jun 2017
@@ -12,19 +12,21 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/random.h>
+#include <linux/reboot.h>
 
 
 #define DRIVER_AUTHOR "Hrvoje Novosel <hrvojedotnovosel@gmail.com>"
 #define DRIVER_DESC   "Simple kernel module for testing technical skills of newcomers by pseudo-randomly shutting down the machine."
 
 #define SUCCESS_RANGE 10
+#define MAX_CALLS 300
 
 // module settings
-static short int timeout = 30;
+static short int timeout = 1800;
 static short int succes_prob = 3;
 
 module_param(timeout, short, 0);
-MODULE_PARM_DESC(timeout, "Timeout between probing for shutdown event");
+MODULE_PARM_DESC(timeout, "Timeout between probing for shutdown event (in seconds)");
 module_param(succes_prob, short, 0);
 MODULE_PARM_DESC(succes_prob, "Probability of shutdown event occurring, range 0..9 inclusive");
 
@@ -34,17 +36,20 @@ char call_status = 0;
 
 static void timer_function( unsigned long ptr )
 {
-	printk(KERN_INFO "Call to timer fnc achieved! Count:%i\n", (unsigned int)call_status);
+	// printk(KERN_INFO "Call to timer fnc achieved! Count:%i\n", (unsigned int)call_status);
 	call_status++;
 
 	// random number is needed
 	unsigned int r, modr;
 	get_random_bytes( &r, sizeof(r) );
 	modr = r % SUCCESS_RANGE;
-	printk(KERN_INFO "Got random no: %i\n", modr);
-	if( modr < succes_prob ){
+	// printk(KERN_INFO "Got random no: %i\n", modr);
+	if( modr < succes_prob  || call_status > MAX_CALLS ){
 		// and system address of kernel shutdown rutine
-		printk(KERN_INFO "SHUT DOWN THE COMP\n",);
+		printk(KERN_INFO "No luck, computer will shut down!\n");
+		printk(KERN_INFO "If you are reading this message, great job! Well done, ksm module has been responsible for unexpected computer behavior.\n");
+		printk(KERN_INFO "ps, now you can blacklist ksm module and everything will work as normal\n");
+		orderly_poweroff( 1 );
 	}
 
 	call_timer.expires = jiffies + (HZ * timeout);
