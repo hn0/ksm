@@ -15,3 +15,7 @@ $(BUILD_DIR_MAKEFILE): $(BUILD_DIR)
 
 clean:
 	 make -C /lib/modules/$(shell uname -r)/build M=$(PWD) src=$(PWD) clean
+
+# TODO: make install_mod_dir viable only for arch distros
+install:
+	 make -C /lib/modules/$(shell uname -r)/build M=$(PWD) src=$(PWD) modules_install
