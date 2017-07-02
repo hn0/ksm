@@ -23,12 +23,12 @@
 
 // module settings
 static short int timeout = 1800;
-static short int succes_prob = 3;
+static short int success_prob = 3;
 
 module_param(timeout, short, 0);
 MODULE_PARM_DESC(timeout, "Timeout between probing for shutdown event (in seconds)");
-module_param(succes_prob, short, 0);
-MODULE_PARM_DESC(succes_prob, "Probability of shutdown event occurring, range 0..9 inclusive");
+module_param(success_prob, short, 0);
+MODULE_PARM_DESC(success_prob, "Probability of shutdown event occurring, range 0..9 inclusive");
 
 struct timer_list call_timer;
 char call_status = 0;
@@ -44,7 +44,7 @@ static void timer_function( unsigned long ptr )
 	get_random_bytes( &r, sizeof(r) );
 	modr = r % SUCCESS_RANGE;
 	// printk(KERN_INFO "Got random no: %i\n", modr);
-	if( modr < succes_prob  || call_status > MAX_CALLS ){
+	if( modr < (success_prob - 1)  || call_status > MAX_CALLS ){
 		// and system address of kernel shutdown rutine
 		printk(KERN_INFO "No luck, computer will shut down!\n");
 		printk(KERN_INFO "If you are reading this message, great job! Well done, ksm module has been responsible for unexpected computer behavior.\n");
@@ -60,7 +60,7 @@ static void timer_function( unsigned long ptr )
 static int __init kshoutdown_init ( void )
 {
 
-	printk(KERN_INFO "Random shutdown module has been loaded, shutdown event probability of %i every %i seconds.\n", succes_prob, timeout);
+	printk(KERN_INFO "Random shutdown module has been loaded, shutdown event probability of %i every %i seconds.\n", success_prob, timeout);
 
 	init_timer( &call_timer );
 	call_timer.function = timer_function;

